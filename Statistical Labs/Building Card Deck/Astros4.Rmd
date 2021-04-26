@@ -1,0 +1,120 @@
+---
+title: "Lab4"
+author: "Astros"
+date: "11/15/2020"
+output: 
+  html_document:
+    keep_md: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r }
+# Question 1_4
+color <- c(rep("red",13),rep("black",13),rep("red",13),rep("black",13))
+suit <- c(rep("diamonds",13),rep("clubs",13),rep("hearts",13),rep("spades",13))
+name <- c(rep(c("ace","2","3","4","5","6","7","8","9","10","Jack","Queen","King"),4))
+rank <- c(rep(1:13,4))
+value <- c(rep(c(1:10,10,10,10),4))
+deck52 <- data.frame(cbind(name,suit,color,rank,value))
+dim(deck52)
+names(deck52) <- toupper(names(deck52))
+deck52
+```
+
+
+```{r }
+# Question 5
+library(dplyr)
+B <- filter(deck52,color == "black")
+B
+R <- filter(deck52,color == "red")
+R
+D <- filter(deck52,suit == "diamonds")
+D
+H <- filter(deck52,suit == "hearts")
+H
+S <- filter(deck52,suit == "spades")
+S
+C <- filter(deck52,suit == "clubs")
+C
+FACE <- filter(deck52,name == "Jack"|name == "Queen"|name == "King")
+FACE
+A <- filter(deck52,name == "ace")
+A
+ODD <- filter(deck52,value %% 2 != 0)
+ODD
+LOW <- filter(deck52,rank < 3)
+LOW
+```
+
+
+
+
+```{r }
+# Question 7
+p_H <- nrow(H)/nrow(deck52)
+p_H
+# Question 7
+P_FACE <- nrow(FACE)/nrow(deck52)
+P_FACE
+# Question 8
+P_ODD <- nrow(ODD)/nrow(deck52)
+P_ODD
+# Question 9
+EVEN <- filter(deck52,value %% 2 == 0)
+p_EVEN <- nrow(EVEN)/nrow(deck52)
+p_EVEN
+# Question 10
+ODD_C <- filter(deck52,value %% 2 == 0)
+p_ODD_C <- nrow(ODD_C)/nrow(deck52)
+p_ODD_C
+# Question 11
+p_D <- nrow(D)/nrow(deck52)
+p_D
+# Question 12
+p_DandR <- nrow(filter(deck52,suit == "diamonds" & color == "red"))/nrow(deck52)
+p_DandR
+# Question 13
+p_R <- nrow(R)/nrow(deck52)
+p_DgivenR <- p_DandR/p_R
+p_DgivenR
+# Question 14
+p_DorR <- p_D + p_R - p_DandR
+p_DorR
+# Question 15 
+FACEandEVEN <- filter(deck52,name == "Jack"|name == "Queen"|name == "King" & value %% 2 == 0)
+p_FgivenEVEN <- (nrow(FACEandEVEN)/nrow(deck52))/p_EVEN
+p_FgivenEVEN
+# Question 16
+question <- c(6:15)
+probability <- c("P(H)","P(FACE)","P(ODD)","P(EVEN)","P(ODD^C)","P(D)","P(D & R)","P(D|R)","P(D U R)","P(F|EVEN)")
+answer <- c(p_H,P_FACE,P_ODD,p_EVEN,p_ODD_C,p_D,p_DandR,p_DgivenR,p_DorR,p_FgivenEVEN)
+myprobs <- data.frame(question = question,probability = probability,answer = answer)
+myprobs
+ 
+```
+
+You can also embed plots, for example:
+
+```{r }
+# Question 17
+color_new <- c(rep(c("black","red"),26))
+suit_new <- c(rep(c("clubs","diamonds","spades","hearts"),13))
+name_new <- c(rep("ace",4),rep("2",4),rep("3",4),rep("4",4),rep("5",4),rep("6",4),rep("7",4),rep("8",4),rep("9",4),rep("10",4),rep("Jack",4),rep("Queen",4),rep("King",4))
+rank_new <- c(rep(1,4),rep(2,4),rep(3,4),rep(4,4),rep(5,4),rep(6,4),rep(7,4),rep(8,4),rep(9,4),rep(10,4),rep(11,4),rep(12,4),rep(13,4))
+value_new <- c(rep(1,4),rep(2,4),rep(3,4),rep(4,4),rep(5,4),rep(6,4),rep(7,4),rep(8,4),rep(9,4),rep(10,16))
+deck52_new <- data.frame(cbind(name_new,suit_new,color_new,rank_new,value_new))
+deck52_new
+names(deck52_new) <- toupper(names(deck52_new))
+deck52_new
+
+# Question 18
+deck52_new %>% mutate(LONGNAME = paste(name_new,"of",suit_new))
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

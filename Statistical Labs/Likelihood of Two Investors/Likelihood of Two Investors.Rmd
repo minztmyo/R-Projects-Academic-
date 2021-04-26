@@ -1,0 +1,265 @@
+---
+title: "Lab5"
+author: "Astros"
+date: "12/15/2020"
+output: 
+  html_document:
+    keep_md: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,message=FALSE,warning=FALSE)
+
+```
+
+
+
+```{r}
+
+library(dplyr)
+
+```
+
+
+###Data import and aggregation
+
+
+```{r}
+
+inv.dat <- read.csv("data.investors16.csv", header = F, row.names = 1)
+dim(inv.dat) #check dimensions
+
+xbarA <- apply(inv.dat, MARGIN = 1, mean) #sample mean of A for each day
+ssdA <- apply(inv.dat, MARGIN = 1, sd) #std dev of A for each day
+nobsA <- apply(inv.dat, MARGIN = 1, length) #sample size of A for each day
+
+mystatsA <- data.frame(xbarA, ssdA, nobsA)
+
+
+inv.dat.tall <- read.csv("data.investors.tall.csv", header = T)
+dim(inv.dat.tall) #check dimensions
+
+
+xbarB <- inv.dat.tall %>% group_by(day) %>% summarise(mean = mean(x))
+ssdB <- inv.dat.tall %>% group_by(day) %>% summarise(sd = sd(x))
+nobsB <- inv.dat.tall %>% group_by(day) %>% summarise(count = length(x))
+
+mystatsB <- data.frame(xbarB = xbarB$mean, ssdB = ssdB$sd,nobsB = nobsB$count, row.names = xbarB$day)
+row.names(mystatsB) <- row.names(mystatsA)
+
+
+#Confirm that mystatsA matches mystatsB
+
+cbind(mystatsA,mystatsB)
+
+TF <- mystatsA == mystatsB 
+TF
+
+#create temporary data frames to make the dimnames equal to one another without affecting code further down; this is just to test that the values are the same using identical() function
+tmp_mystatsA <- mystatsA
+tmp_mystatsB <- mystatsB
+dimnames(tmp_mystatsB) <- dimnames(tmp_mystatsA)
+identical(tmp_mystatsA, tmp_mystatsB) 
+
+
+# another method to show both the data frames are equal
+
+identical(mystatsA$xbarA,mystatsB$xbarB)
+identical(mystatsA$ssdA,mystatsB$ssdB)
+identical(mystatsA$nobsA,mystatsB$nobsB)
+
+
+```
+
+
+###Investor A
+Run mystats = mystatsA to make a new data.frame. (Would it matter if you used mystatsB instead?)
+We will use mystats for everything that follows. Each step below asks you to compute a 20-vector and
+add it to mystats. The column dimension of mystats will go from 3 to 10.
+
+
+
+```{r}
+
+mystats = mystatsA
+mystats
+
+```
+
+
+Compute the value of the test statistic for each of the 20 days.
+
+
+```{r}
+
+mystats <- mystats %>% mutate(tstat=(xbarA-5)/(ssdA/sqrt(nobsA)))
+row.names(mystats) <- row.names(mystatsA)
+mystats
+
+```
+
+
+Let tcrit1 be a 20-vector containing
+the negative critical value, and let tcrit2 contain the positive critical value. Add these two vectors to
+mystats.
+
+
+```{r}
+
+alpha <- 0.10
+df <- nobsA-1
+mystats <- mystats %>% mutate(tcrit1=qt(alpha/2,df))
+mystats <- mystats %>% mutate(tcrit2=qt(alpha/2,df,lower.tail=F))
+row.names(mystats) <- row.names(mystatsA)
+mystats
+
+
+```
+
+
+Perform the hypothesis test. If tstat is outside the critical values, Investor A rejects H0. If tstat is
+between the critical values, she accepts. Use this rule with ifelse() to create vector test1 populated
+with the values ACCEPT or REJECT.
+
+
+```{r}
+
+mystats$test1 <- ifelse((mystats$tstat > mystats$tcrit1) & (mystats$tstat < mystats$tcrit2), "ACCEPT", "REJECT") 
+mystats
+
+```
+
+
+The p-value represents the probability of obtaining getting a value of the test statistic more contradictory
+to H0 than tstat. Compute the vector of p-values like this:
+
+
+```{r}
+
+mystats <- mystats %>% mutate(pval=2*(1-pt(abs(mystats$tstat), nobsA - 1)))
+row.names(mystats) <- row.names(mystatsA)
+mystats
+
+
+```
+
+
+Use the p-value to perform the hypothesis test a different way. Compare the p-value to the significance
+level α. If pval ≤ α, reject H0. Otherwise, accept H0. Use this rule with ifelse() to create vector
+test2 populated with the values ACCEPT or REJECT. It should be identical to test1.
+
+
+```{r}
+
+mystats$test2 <- ifelse(mystats$pval <= 0.1, "REJECT", "ACCEPT")   #perform the hypothethis test using p-value
+mystats 
+
+```
+
+
+ Finally, create vector dec.A and populate it with the values GOLF or STARBUCKS. The data.frame
+mystats should now be 20x10.
+
+
+```{r}
+
+mystats$dec.A <- ifelse(mystats$test1 == "ACCEPT", "GOLF", "STARBUCKS")
+mystats
+
+```
+
+
+
+Investor B
+
+
+```{r}
+
+
+df <- nobsA-1
+
+(t <- round(qt((1-0.10/2),df),2))
+
+
+
+(mystats$lim1 <- mystatsB$xbarB - t*(mystatsB$ssdB/(sqrt(mystatsB$nobsB))))
+
+(mystats$lim2 <- mystatsB$xbarB + t*(mystatsB$ssdB/(sqrt(mystatsB$nobsB))))
+
+
+
+mystats$test3 <- ifelse(mystats$lim2 < 5, "REJECT", "ACCEPT")
+
+mystats$dec.B <- ifelse(mystats$test3 == "ACCEPT", "GOLF", "STARBUCKS")
+
+mystats
+
+
+```
+
+
+
+####A level questions
+
+
+Do you think A and B will ever get to know each other? Explain why or why not
+
+```{r}
+
+c(paste("The number of days that investigator A and B are in the same place out of 20 days is :" ))
+
+sum(mystats$dec.A == mystats$dec.B)
+
+  
+
+```
+
+
+Assume the true value of µ is 5 on each of the 20 trading days. Use that information to add columns
+grade.A and grade.B to mystats. Grade each investor’s decisions as CORRECT or INCORRECT.
+
+```{r}
+
+
+mystats$grade.A <- ifelse(mystats$test1 == "REJECT", "INCORRECT", "CORRECT") 
+
+mystats$grade.B <- ifelse(5 > mystats$lim2 | 5 < mystats$lim1, "INCORRECT", "CORRECT")
+
+mystats
+
+```
+
+
+Suppose Investor B uses α = .05 on each of the 20 days. Run his analyses again with this new α value
+and make a new version of mystats to incorporate the new results
+
+
+```{r}
+
+#alpha = 0.05
+df <- nobsA-1
+
+(t1 <- round(qt((1-0.05/2),df),2))
+
+mystats$newlim1 <- mystatsB$xbarB - t1*(mystatsB$ssdB/(sqrt(mystatsB$nobsB)))
+
+mystats$newlim2 <- mystatsB$xbarB + t1*(mystatsB$ssdB/(sqrt(mystatsB$nobsB)))
+
+mystats$newtest <- ifelse(mystats$newlim2 >= 5, "ACCEPT", "REJECT")
+mystats$dec.BNew <- ifelse(mystats$newtest == "ACCEPT", "GOLF", "STARBUCKS")
+mystats$grade.BNew <- ifelse(5 > mystats$newlim2 | 5 < mystats$newlim1, "INCORRECT", "CORRECT")
+
+c(paste("The chances of A and B getting to know each other is the same as before." ))
+
+sum(mystats$dec.A == mystats$dec.BNew)
+
+
+mystats
+
+
+```
+
+
+
+
+
